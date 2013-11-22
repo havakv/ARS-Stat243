@@ -12,14 +12,15 @@ ars <- function(f, n, test=TRUE, left_bound = -Inf, right_bound = Inf, k=3) {
   fpx <- fp(f, x)
   sample <- rep(NA, n)
   count <- 0
+  z <- make_z(x, fx, fpx, left_bound, right_bound) 
 
   while (count < n) {
     #Make the lower_bound, upper bound functions
-    lower_bound <- make_lower_bound(x, fx, left_bound, right_bound)
-    upper_bound <- make_upper_bound(x, fx, fpx, left_bound, right_bound)
+    lower_bound <- make_lower_bound(x, fx, z, left_bound, right_bound)
+    upper_bound <- make_upper_bound(x, fx, fpx, z, left_bound, right_bound)
     
     #Draw samples from the upper bound function
-    cand <- sample_upper_bound(n - count, x, fx, fpx, left_bound, right_bound)
+    cand <- sample_upper_bound(n - count, x, fx, fpx, z, left_bound, right_bound)
     
     #"update" records the first point in the sample that can not be accepted based on lowerbound
     #"accepted" records the candidates drawn from upper_bound function that are accepted by only using the lowerbound until the "update" point
@@ -32,9 +33,11 @@ ars <- function(f, n, test=TRUE, left_bound = -Inf, right_bound = Inf, k=3) {
     count <- length(na.omit(sample))
     
     #Update the abscissaes x
-    x <- sort(c(x, update))
-    fx <- sort(c(fx, f(update)))
-    fpx <- sort(c(fpx, fp(f, update)))
+    update_absci <- update_x(x, fx, fpx, update)
+    x <- update_absci[1]
+    fx <- update_absci[2]
+    fpx <- update_absci[3]
+    z <- make_z(x, fx, fpx, left_bound, right_bound)
   }
   return (sample)
 }
