@@ -9,7 +9,7 @@ ars <- function(f, n, test=TRUE, left_bound = -Inf, right_bound = Inf, k=3) {
   #Generating the initial abscissaes x
   x <- initial(left_bound, right_bound, k)
   hx <- log(f(x))
-  hpx <- log(fp(f, x))
+  hpx <- deriv(log(f), x)
   sample <- rep(NA, n)
   count <- 0
   z <- make_z(x, hx, hpx, left_bound, right_bound) 
