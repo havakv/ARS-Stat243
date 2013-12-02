@@ -28,6 +28,8 @@ ars <- function(f, n, test=TRUE, left_bound = -Inf, right_bound = Inf, k=3) {
     accepted <- cand_filtered$accepted
     update <- cand_filtered$update
     
+    if ((log(f(update)) < lower_bound(update)) | (log(f(update)) > upper_bound(update))) stop("The sample function is not log-concaved!")
+    
     #Update the sample using cand_filtered
     sample <- update_sample(sample, cand_filtered)
     count <- length(na.omit(sample))

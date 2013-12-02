@@ -15,18 +15,21 @@ update_x <- function(f, x, hx, hpx, update) {
     new_hx[rank_x] <- c(hx, hx_update)
     new_hpx[rank_x] <- c(hpx, hpx_update)
     
+    if (is.unsorted(-new_hpx)) stop("The sample function is not log-concaved!")
+    
     return(list(x=new_x, hx=new_hx, hpx=new_hpx))
   }
 }
 
 ##Test case for update_x###
 f <- function(x) return(x^2)
-x <- seq(-10.5, 10.5, by=1)
+x <- seq(1.5, 10.5, by=1)
 hx <- log(f(x))
 hpx <- 2/x
 
 update_x(f, x, hx, hpx, 5.1)
 update_x(f, x, hx, hpx, 12)
-update_x(f, x, hx, hpx, -100)
+update_x(f, x, hx, hpx, 0.5)
 
-
+ff <- function(x) return(exp(x^2))
+update_x(ff, x, hx, hpx, 5.1)
