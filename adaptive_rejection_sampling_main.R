@@ -9,7 +9,7 @@ ars <- function(f, n, test=TRUE, left_bound = -Inf, right_bound = Inf, k=3) {
   #Generating the initial abscissaes x
   x <- initial(left_bound, right_bound, k)
   hx <- log(f(x))
-  hpx <- deriv(log(f), x)
+  hpx <- diag(attributes(numericDeriv(quote(log(f(x))), "x"))$gradient)
   sample <- rep(NA, n)
   count <- 0
   z <- make_z(x, hx, hpx, left_bound, right_bound) 
@@ -25,18 +25,18 @@ ars <- function(f, n, test=TRUE, left_bound = -Inf, right_bound = Inf, k=3) {
     #"update" records the first point in the sample that can not be accepted based on lowerbound
     #"accepted" records the candidates drawn from upper_bound function that are accepted by only using the lowerbound until the "update" point
     cand_filtered <- filter(cand, lower_bound, upper_bound)
-    accepted <- cand_filtered[1]
-    update <- cand_filtered[2]
+    accepted <- cand_filtered$accepted
+    update <- cand_filtered$update
     
     #Update the sample using cand_filtered
     sample <- update_sample(sample, cand_filtered)
     count <- length(na.omit(sample))
     
     #Update the abscissaes x
-    update_absci <- update_x(x, hx, hpx, update)
-    x <- update_absci[1]
-    hx <- update_absci[2]
-    hpx <- update_absci[3]
+    update_absci <- update_x(f, x, hx, hpx, update)
+    x <- update_absci$x
+    hx <- update_absci$hx
+    hpx <- update_absci$hpx
     z <- make_z(x, hx, hpx, left_bound, right_bound)
   }
   return (sample)
