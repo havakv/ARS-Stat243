@@ -5,9 +5,9 @@
 
 #f is the target density function, n is the number of required sample, test indicates whether to perform the test, k is the initial number of abscissaes
 
-ars <- function(f, n, test=TRUE, left_bound = -Inf, right_bound = Inf, k=3) {
+ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init) {
   #Generating the initial abscissaes x
-  x <- initial(left_bound, right_bound, k)
+  x <- x_init
   hx <- log(f(x))
   hpx <- diag(attributes(numericDeriv(quote(log(f(x))), "x"))$gradient)
   sample <- rep(NA, n)
@@ -16,11 +16,11 @@ ars <- function(f, n, test=TRUE, left_bound = -Inf, right_bound = Inf, k=3) {
 
   while (count < n) {
     #Make the lower_bound, upper bound functions
-    lower_bound <- make_lower_bound(x, hx, z, left_bound, right_bound)
-    upper_bound <- make_upper_bound(x, hx, hpx, z, left_bound, right_bound)
+    lower_bound <- make_lower_bound(x, hx, left_bound, right_bound)
+    upper_bound <- make_upper_bound(x, hx, hpx, z)
     
     #Draw samples from the upper bound function
-    cand <- sample_upper_bound(n - count, x, hx, hpx, z, left_bound, right_bound)
+    cand <- sample_upper_bound(n - count, x, hx, hpx, z)
     
     #"update" records the first point in the sample that can not be accepted based on lowerbound
     #"accepted" records the candidates drawn from upper_bound function that are accepted by only using the lowerbound until the "update" point
@@ -28,10 +28,16 @@ ars <- function(f, n, test=TRUE, left_bound = -Inf, right_bound = Inf, k=3) {
     accepted <- cand_filtered$accepted
     update <- cand_filtered$update
     
+    if (is.na(update)) {
+      sample[(count+1):n] <- accepted
+      return(sample)
+    }
+    
+    #Check the log-concaveness by checking if the log(f(update)) falls in between lower and upper bound function 
     if ((log(f(update)) < lower_bound(update)) | (log(f(update)) > upper_bound(update))) stop("The sample function is not log-concaved!")
     
     #Update the sample using cand_filtered
-    sample <- update_sample(sample, cand_filtered)
+    sample <- update_sample(sample, accepted, update, count, f, upper_bound)
     count <- length(na.omit(sample))
     
     #Update the abscissaes x

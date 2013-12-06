@@ -1,6 +1,6 @@
-sample_upper_bound <- function(m, x, hx, hpx, left_bound, right_bound) {
+#sample_upper_bound function samples m points from the upper bound funtion using inverse cdf method. The inverse cdf is calculated analytically and implemented in the auxillary function inversecdf.
+sample_upper_bound <- function(m, x, hx, hpx, z) {
   k <- length(x)
-  z <- make_z(x, hx, hpx, left_bound, right_bound)
   
   #Calcualte the normalized integration of upper_bound funtion at each linear interval
   factor1 <- exp(hx - x*hpx) 

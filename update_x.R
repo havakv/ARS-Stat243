@@ -1,3 +1,5 @@
+#update_x function adds the update point into the abscissaes vector, and also checks if the derivative at the update point is between its neighbours(i.e., checking the cancaveness)
+
 update_x <- function(f, x, hx, hpx, update) {
   if (is.na(update)){
     return (list(x=x, hx=hx, hpx=hpx))
@@ -15,6 +17,7 @@ update_x <- function(f, x, hx, hpx, update) {
     new_hx[rank_x] <- c(hx, hx_update)
     new_hpx[rank_x] <- c(hpx, hpx_update)
     
+    #Check concaveness by testing if h'(x) is decreasing
     if (is.unsorted(-new_hpx)) stop("The sample function is not log-concaved!")
     
     return(list(x=new_x, hx=new_hx, hpx=new_hpx))

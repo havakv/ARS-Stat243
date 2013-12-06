@@ -1,3 +1,4 @@
+#Calculating the z based on abscissae x. z[1]=left_bound, z[k+1]=right_bound
 make_z <- function(x, fx, fpx, left_bound, right_bound) {
   k <- length(x)
   xm1 <- c(0, x)
@@ -15,8 +16,8 @@ make_z <- function(x, fx, fpx, left_bound, right_bound) {
 }
 
 #Test case for make_z
-# x <- seq(-10, 10, by = 2)
-# fx <- x^2
-# fpx <- 2*x
-# plot(x, fx)
-# points(make_z(x, fx, fpx, -12, 12), make_z(x, fx, fpx, -12, 12)^2, col="red")
+x <- seq(-10, 10, by = 2)
+fx <- x^2
+fpx <- 2*x
+plot(x, fx)
+points(make_z(x, fx, fpx, -12, 12), make_z(x, fx, fpx, -12, 12)^2, col="red")
