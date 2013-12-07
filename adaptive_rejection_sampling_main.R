@@ -24,12 +24,12 @@ ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init) {
     
     #"update" records the first point in the sample that can not be accepted based on lowerbound
     #"accepted" records the candidates drawn from upper_bound function that are accepted by only using the lowerbound until the "update" point
-    cand_filtered <- filter(cand, lower_bound, upper_bound)
+    cand_filtered <- filter(cand, lower_bound, upper_bound, n-count)
     accepted <- cand_filtered$accepted
     update <- cand_filtered$update
     
-    if (is.na(update)) {
-      sample[(count+1):n] <- accepted
+    if (is.na(update[1])) {
+      sample[(count+1):n] <- cand
       return(sample)
     }
     
@@ -37,11 +37,10 @@ ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init) {
     if ((log(f(update)) < lower_bound(update)) | (log(f(update)) > upper_bound(update))) stop("The sample function is not log-concaved!")
     
     #Update the sample using cand_filtered
-    sample <- update_sample(sample, accepted, update, count, f, upper_bound)
-    count <- length(na.omit(sample))
+    update_sample(cand, accepted, update, count, f, upper_bound)
     
-    #Update the abscissaes x
-    update_absci <- update_x(f, x, hx, hpx, update)
+    #Update the abscissas x
+    update_absci <- update_x(f, x, hx, hpx, update$cand)
     x <- update_absci$x
     hx <- update_absci$hx
     hpx <- update_absci$hpx

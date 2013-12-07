@@ -24,12 +24,12 @@ ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init) {
     
     #"update" records the first point in the sample that can not be accepted based on lowerbound
     #"accepted" records the candidates drawn from upper_bound function that are accepted by only using the lowerbound until the "update" point
-    cand_filtered <- filter(cand, lower_bound, upper_bound)
+    cand_filtered <- filter(cand, lower_bound, upper_bound, n-count)
     accepted <- cand_filtered$accepted
     update <- cand_filtered$update
     
-    if (is.na(update)) {
-      sample[(count+1):n] <- accepted
+    if (is.na(update[1])) {
+      sample[(count+1):n] <- cand
       return(sample)
     }
     
@@ -37,11 +37,10 @@ ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init) {
     if ((log(f(update)) < lower_bound(update)) | (log(f(update)) > upper_bound(update))) stop("The sample function is not log-concaved!")
     
     #Update the sample using cand_filtered
-    sample <- update_sample(sample, accepted, update, count, f, upper_bound)
-    count <- length(na.omit(sample))
+    update_sample(cand, accepted, update, count, f, upper_bound)
     
-    #Update the abscissaes x
-    update_absci <- update_x(f, x, hx, hpx, update)
+    #Update the abscissas x
+    update_absci <- update_x(f, x, hx, hpx, update$cand)
     x <- update_absci$x
     hx <- update_absci$hx
     hpx <- update_absci$hpx
@@ -49,49 +48,61 @@ ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init) {
   }
   return (sample)
 }
+# the function filter() used in adaptive_rejection_sampling_main.R
+# It performs a squeezing test between the lower and upper bound.
 
-#Function filer takes in the cand generated from sample_upper_bound and return the accepted sample and update point. 
-#If all the cand are accepted, the update value is NA
-#If no cand is accepted, the accepted value is NA
+# Returns a list with
+# $accepted: integer: position of last accepted candidate
+# $update:   list: $cand is fist value not accepted
+# 		   $w is corresponding draw form uniform dist
+#                  Or if all candidates are accepted returns NA
 
-filter <- function(cand, lower_bound, upper_bound){
-  w <- runif(n = length(cand)) # Should use value from script
+filter <- function(cand, lower_bound, upper_bound, m){
+  w <- runif(m) 
   squeeze <- lower_bound(cand) - upper_bound(cand)
-  
-  # Gives NA if the all is accepted
+
+  # Gives NA if all are accepted
   i <- which(log(w) > squeeze)[1]
-  
+
   if (is.na(i)) {
-    return(list(accepted=cand, update=NA))
+    return(list(accepted=m, update=NA))
   } 
   else{
     if (i==1) {
-      return(list(accepted=NA, update=cand[i]))
+      return(list(accepted=NA, update=list(cand=cand[i], w=w[i])))
     }
     else {
-      return(list(accepted=cand[1:(i-1)], update=cand[i]))
+      return(list(accepted=(i-1), update=list(cand=cand[i], w=w[i])))
     }
   }
 }
+##########################
 
-
-#update_sample function adds the accepted sample into the final sample, and it also check whether to add update into the final sample
-update_sample <- function(sample, accepted, update, count, f, upper_bound) {
-  w <- runif(1)
-  flag <- (log(w) < log(f(update))/upper_bound(update))
-  if (is.na(accepted[1])) {
-    if (flag) sample[(count+1)] <- update
+# update_sample()
+# Check if first point not excepted in filter is accepted, and updates sample
+# output NULL. Assign to sample and count in parent scope.
+# Have to rewrite 
+update_sample <- function(cand, accepted, update, count, f, upper_bound) {
+  flag <- (log(update$w) < log(f(update$cand))/upper_bound(update$cand))
+  if (is.na(accepted)) {
+    if (flag){
+      sample[(count+1)] <<- update$cand
+      count <<- count + 1
+    }
   }
   else {
-    k <- length(accepted)
+    k <- accepted
     if (flag) {
-      sample[(count+1):(count+1+k)] <- c(accepted, update)
+      sample[(count+1):(count+k)] <<- cand[1:accepted]
+      sample[count+k+1] <<- update$cand
+      count <<- count + k + 1
     }
     else {
-      sample[(count+1):(count+k)] <- c(accepted)
+      sample[(count+1):(count+k)] <<- cand[1:accepted]
+      count <<- count + k 
     }
   }
-  return(sample)
+  invisible(NULL)
 }
 
 #make_lower_bound function returns the lower_bound function
@@ -123,6 +134,15 @@ make_upper_bound <- function(x, hx, hpx, z) {
   return(upper_bound)
 }
 
+#################################################################
+make_lower_bound2 <- function(x, hx, left_bound, right_bound) {
+  x <- c(left_bound, x, right_bound)
+  hx <- c(-Inf, hx, -Inf)
+  lower_bound <- approxfun(x,hx)
+  return(lower_bound)
+}
+
+#------------------------------------------------
 #Calculating the z based on abscissae x. z[1]=left_bound, z[k+1]=right_bound
 make_z <- function(x, fx, fpx, left_bound, right_bound) {
   k <- length(x)
@@ -163,9 +183,7 @@ sample_upper_bound <- function(m, x, hx, hpx, z) {
 
 inversecdf <- function(t, j, factor1, hpx, z) {
   return ( log(t/factor1[j]*hpx[j] + exp(hpx[j]*z[j])) / hpx[j] )
-}
-
-#update_x function adds the update point into the abscissaes vector, and also checks if the derivative at the update point is between its neighbours(i.e., checking the cancaveness)
+}#update_x function adds the update point into the abscissaes vector, and also checks if the derivative at the update point is between its neighbours(i.e., checking the cancaveness)
 
 update_x <- function(f, x, hx, hpx, update) {
   if (is.na(update)){
@@ -190,3 +208,16 @@ update_x <- function(f, x, hx, hpx, update) {
     return(list(x=new_x, hx=new_hx, hpx=new_hpx))
   }
 }
+
+##Test case for update_x###
+#f <- function(x) return(x^2)
+#x <- seq(1.5, 10.5, by=1)
+#hx <- log(f(x))
+#hpx <- 2/x
+
+#update_x(f, x, hx, hpx, 5.1)
+#update_x(f, x, hx, hpx, 12)
+#update_x(f, x, hx, hpx, 0.5)
+
+#ff <- function(x) return(exp(x^2))
+#update_x(ff, x, hx, hpx, 5.1)

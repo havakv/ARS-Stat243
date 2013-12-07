@@ -25,14 +25,14 @@ update_x <- function(f, x, hx, hpx, update) {
 }
 
 ##Test case for update_x###
-f <- function(x) return(x^2)
-x <- seq(1.5, 10.5, by=1)
-hx <- log(f(x))
-hpx <- 2/x
+#f <- function(x) return(x^2)
+#x <- seq(1.5, 10.5, by=1)
+#hx <- log(f(x))
+#hpx <- 2/x
 
-update_x(f, x, hx, hpx, 5.1)
-update_x(f, x, hx, hpx, 12)
-update_x(f, x, hx, hpx, 0.5)
+#update_x(f, x, hx, hpx, 5.1)
+#update_x(f, x, hx, hpx, 12)
+#update_x(f, x, hx, hpx, 0.5)
 
-ff <- function(x) return(exp(x^2))
-update_x(ff, x, hx, hpx, 5.1)
+#ff <- function(x) return(exp(x^2))
+#update_x(ff, x, hx, hpx, 5.1)

@@ -15,9 +15,3 @@ make_z <- function(x, fx, fpx, left_bound, right_bound) {
   return (z)
 }
 
-#Test case for make_z
-x <- seq(-10, 10, by = 2)
-fx <- x^2
-fpx <- 2*x
-plot(x, fx)
-points(make_z(x, fx, fpx, -12, 12), make_z(x, fx, fpx, -12, 12)^2, col="red")
