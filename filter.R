@@ -2,76 +2,68 @@
 # the function filter() used in adaptive_rejection_sampling_main.R
 # It performs a squeezing test between the lower and upper bound.
 
-# Should we make lower and upper bond functions or what?
-# What looks nice, and is most effective?
-
 # Returns a list with
 # $accepted: vector of accepted candidates
 # $update:   first element to not be accepted
 
+
 filter <- function(cand, lower_bound, upper_bound){
-  w <- runif(n = length(cand)) # Should use value from script...
-  i <- 0
-  accepted <- TRUE
-  while (accepted && i < length(cand)){ # Should use value from script...
-    i <- 1
-    if (w[i]>exp(lower_bound[i] - upper.bound[i])) {
-    	accepted <- FALSE
-    }
-  }
-  if (i == 1) {
-    return(list(accepted=NULL, update=cand(1)))
-  } 
-  else{
-    return(list(accepted=cand[1:(i-1)], update=cand(i)))
-  }
-  # consider returning index for update as well...
-}
-
-
-# -----------------------
-# FASTER ???
-# -----------------------
-
-# Maybe it is faster to evaluate the bounds as functions. The we do not need to evaluate more than up to update.
-filter1 <- function(candd){
-  w <- runif(n = length(cand)) # Should use value from script...
-  i <- 0
-  accepted <- TRUE
-  while (accepted && i < length(cand)){ # Should use value from script...
-    i <- 1
-    # Now the bounds are functions to evaluate one point.
-    # Can we use make_lower_bound() directly? In that case, change name.
-    if (w[i]>exp(lower_bound(i) - upper.bound(i))) {
-    	accepted <- FALSE
-    }
-  }
-  if (i == 1) {
-    return(list(accepted=NULL, update=cand(1)))
-  } 
-  else{
-    return(list(accepted=cand[1:(i-1)], update=cand(i)))
-  }
-  # consider returning index for update as well...
-}
-
-# ---------------------------------------------------------
-
-# Using vectorized calculations 
-# Have to evaluate all, but probably faster. 
-# Do not think which should take much work, but we should probably test everything
-filter2 <- function(cand, lower_bound, upper_bound){
-  w <- runif(n = length(cand)) # Should use value from script...
-  squeeze <- exp(lower_bound - upper.bound)
+  w <- runif(n = length(cand)) # Should use value from script
+  squeeze <- lower_bound(cand) - upper_bound(cand)
 
   # Gives NA if the all is accepted
-  i <- which(w > squeeze)[1]
+  i <- which(log(w) > squeeze)[1]
 
   if (is.na(i)) {
-    return(list(accepted=NULL, update=cand(1)))
+    return(list(accepted=cand, update=NA))
   } 
-  else {
-    return(list(accepted=cand[1:(i-1)], update=cand(i)))
+  else{
+    if (i==1) {
+      return(list(accepted=NA, update=list(x=cand[i], w=w[i])))
+    }
+    else {
+      return(list(accepted=cand[1:(i-1)], update=list(x=cand[i], w=w[i])))
+    }
   }
-  # consider returning index for update as well...
 }
+
+#update_sample function adds the accepted sample into the final sample, and it also check whether to add update into the final sample
+update_sample <- function(accepted, update, count, f, upper_bound) {
+  # Update should contain w
+  if (log(update$w) < log(f(update$x))/upper_bound(update)) {
+    accepted <- c(accepted, update)
+  }
+  accepted <- na.exclude(accepted)
+  k <- length(accepted)
+  if (k != 0) {
+    sample[(count+1):(count+k)] <<- accepted
+  }
+  count <<- count + k
+  return(NULL)
+}
+
+# -------------------------------------------
+x <- rep(NA, 1e7)
+x[1:1000] <- rnorm(1000)
+noLength <- function(x) {length(x)}
+Length <- function(x) {length(na.omit(x))}
+library(rbenchmark)
+
+benchmark({noLength(x)},
+	  {Length(x)},
+	  replications = 10, columns=c('test', 'elapsed', 'replications'))
+
+benchmark({noLength(x)},
+	  replications = 1000, columns=c('test', 'elapsed', 'replications'))
+
+# ------------------------------------------
+byVal <- function(x) { 
+  x[1] <- 5
+  return(x)
+}
+byRef <- function() { 
+  x[1] <<- 5
+  return(NULL)
+}
+benchmark({x <- byVal(x)}, byRef(),
+	  replications = 10, columns=c('test', 'elapsed', 'replications'))
