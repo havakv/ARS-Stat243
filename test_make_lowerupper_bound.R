@@ -28,17 +28,26 @@ lines(xx, upper(xx), col="blue")
 
 #################################################################
 
+# Benchmark lower
+source("make_lowerupper_bound.R")
 x <- seq(-10.5, 10.5, by=4)
 hx <- -x^2
 hpx <- -2*x
 z <- make_z(x,hx,hpx,-12.0, 12.0)
+lower_old <- make_lower_bound_old(x, hx, -12.0, 12.0)
 lower <- make_lower_bound(x, hx, -12.0, 12.0)
-lower2 <- make_lower_bound2(x, hx, -12.0, 12.0)
 
 xx <- runif(n = 1e5, min = -12, max = 12)
 
 library(rbenchmark)
-benchmark(lower(xx), lower2(xx),
+benchmark(lower_old(xx), lower(xx),
 	  replications = 10, columns=c('test', 'elapsed', 'replications'))
 
+
+# Benchmark upper
+upper_old <- make_upper_bound_old(x, hx, hpx, z)
+upper <- make_upper_bound(x, hx, hpx, z)
+
+benchmark(upper_old(xx), upper(xx),
+	  replications = 10, columns=c('test', 'elapsed', 'replications'))
 
