@@ -1,6 +1,6 @@
 # Testing make_lower_bound and make_upper_bound
 
-source("ARS.R")
+source("../ARS.R")
 
 x <- seq(-10.5, 10.5, by=4)
 hx <- -x^2

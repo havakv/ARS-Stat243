@@ -2,7 +2,7 @@
 
 # Test functions
 set.seed(0)
-source("ARS.R")
+source("../ARS.R")
 f <- dnorm
 n <- 10
 x <- sort(rnorm(7))
@@ -13,7 +13,7 @@ hpx <- diag(attributes(numericDeriv(quote(log(f(x))), "x"))$gradient)
 sample <- rep(NA, n)
 count <- 0
 z <- make_z(x, hx, hpx, left_bound, right_bound) 
-lower_bound <- make_lower_bound(x, hx, left_bound, right_bound)
+lower_bound <- make_lower_bound(x, hx)
 upper_bound <- make_upper_bound(x, hx, hpx, z)
 cand <- sample_upper_bound(n - count, x, hx, hpx, z)
 
