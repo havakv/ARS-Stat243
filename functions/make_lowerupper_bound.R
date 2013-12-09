@@ -50,8 +50,10 @@ make_upper_bound <- function(x, hx, hpx, z) {
   # Because of numerical issues
   # Need to find a better way to do to this. Is x sorted? 
   m <- length(z)
-  if (z[1] == -Inf) z[1] <- -1000*max(abs(x))
-  if (z[m] == Inf) z[m] <- 1000*max(abs(x))
+  #if (z[1] == -Inf) z[1] <- -1000*max(abs(x))
+  if (z[1] == -Inf) z[1] <- -1e300
+  #if (z[m] == Inf) z[m] <- 1000*max(abs(x))
+  if (z[m] == Inf) z[m] <- 1e300
   y <- upper_bound_eval_z(z)
   upper_bound <- approxfun(z,y)
   return(upper_bound)
