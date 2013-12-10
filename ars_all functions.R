@@ -5,11 +5,12 @@
 
 #f is the target density function, n is the number of required sample, test indicates whether to perform the test, k is the initial number of abscissaes
 
-ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init) {
+ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init, ...) {
   #Generating the initial abscissaes x
   x <- x_init
-  hx <- log(f(x))
-  hpx <- diag(attributes(numericDeriv(quote(log(f(x))), "x"))$gradient)
+  hx <- log(f(x, ...))
+  hpx <- diag(attributes(numericDeriv(quote(log(f(x, ...))), "x"))$gradient)
+  if (((hpx[1] < 0) & (left_bound==-Inf)) | ((hpx[length(hpx)]>0) & (right_bound==Inf))) stop("The derivatie at the first/last initial point must be positive/negative")
   sample <- rep(NA, n)
   count <- 0
   z <- make_z(x, hx, hpx, left_bound, right_bound) 
@@ -34,14 +35,14 @@ ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init) {
     }
     
     #Check the log-concaveness by checking if the log(f(update)) falls in between lower and upper bound function 
-    if ((log(f(update)) < lower_bound(update)) | (log(f(update)) > upper_bound(update))) stop("The sample function is not log-concaved!")
+    if ((log(f(update, ...)) < lower_bound(update)) | (log(f(update, ...)) > upper_bound(update))) stop("The sample function is not log-concaved!")
     
     #Update the sample using cand_filtered
-    sample <- update_sample(sample, accepted, update, count, f, upper_bound)
+    sample <- update_sample(sample, accepted, update, count, f, upper_bound, ...)
     count <- length(na.omit(sample))
     
     #Update the abscissaes x
-    update_absci <- update_x(f, x, hx, hpx, update)
+    update_absci <- update_x(f, x, hx, hpx, update, ...)
     x <- update_absci$x
     hx <- update_absci$hx
     hpx <- update_absci$hpx
@@ -76,9 +77,9 @@ filter <- function(cand, lower_bound, upper_bound){
 
 
 #update_sample function adds the accepted sample into the final sample, and it also check whether to add update into the final sample
-update_sample <- function(sample, accepted, update, count, f, upper_bound) {
+update_sample <- function(sample, accepted, update, count, f, upper_bound, ...) {
   w <- runif(1)
-  flag <- (log(w) < log(f(update))/upper_bound(update))
+  flag <- (log(w) < log(f(update, ...))/upper_bound(update))
   if (is.na(accepted[1])) {
     if (flag) sample[(count+1)] <- update
   }
@@ -143,7 +144,6 @@ make_z <- function(x, fx, fpx, left_bound, right_bound) {
 #sample_upper_bound function samples m points from the upper bound funtion using inverse cdf method. The inverse cdf is calculated analytically and implemented in the auxillary function inversecdf.
 sample_upper_bound <- function(m, x, hx, hpx, z) {
   k <- length(x)
-  
   #Calcualte the normalized integration of upper_bound funtion at each linear interval
   factor1 <- exp(hx - x*hpx) 
   factor2 <- (exp(c(0, hpx) * z)[2:(k+1)] - exp(hpx*z[1:k])) / hpx
@@ -167,14 +167,14 @@ inversecdf <- function(t, j, factor1, hpx, z) {
 
 #update_x function adds the update point into the abscissaes vector, and also checks if the derivative at the update point is between its neighbours(i.e., checking the cancaveness)
 
-update_x <- function(f, x, hx, hpx, update) {
+update_x <- function(f, x, hx, hpx, update, ...) {
   if (is.na(update)){
     return (list(x=x, hx=hx, hpx=hpx))
   }
   else {
-    hx_update <- log(f(update))
+    hx_update <- log(f(update, ...))
     xx <- update
-    hpx_update <- attributes(numericDeriv(quote(log(f(xx))), "xx"))$gradient[1, 1]
+    hpx_update <- attributes(numericDeriv(quote(log(f(xx, ...))), "xx"))$gradient[1, 1]
     rank_x <- rank(c(x, update))
     new_x <- rep(NA, length(x)+1)
     new_hx <- rep(NA, length(x)+1)
