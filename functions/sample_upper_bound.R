@@ -11,7 +11,8 @@ sample_upper_bound <- function(m, x, hx, hpx, z) {
   intervalcdf <- cumsum(I)
   sample <- runif(m, min=0, max=Inormalize)
   #calculate which interval the sample falls into
-  sample_interval <- sapply(sample, function(t) sum(intervalcdf<t)) + 1
+  #sample_interval <- sapply(sample, function(t) sum(intervalcdf<t)) + 1
+  sample_interval <- rowSums(outer(sample, intervalcdf, function(x,y) x>y)) + 1
   t <- sample - c(0, intervalcdf)[sample_interval]
   
   sample_x <- inversecdf(t, sample_interval, factor1, hpx, z)

@@ -8,6 +8,7 @@
 ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init, ...) {
   #Generating the initial abscissaes x
   x <- x_init
+  x <- sort(x)
   hx <- log(f(x, ...))
   hpx <- diag(attributes(numericDeriv(quote(log(f(x, ...))), "x"))$gradient)
   if (((hpx[1] < 0) & (left_bound==-Inf)) | ((hpx[length(hpx)]>0) & (right_bound==Inf))) stop("The derivatie at the first/last initial point must be positive/negative")
@@ -85,34 +86,6 @@ filter <- function(cand, lower_bound, upper_bound, m){
 }
 
 #----------------------------------------------------------------------------
-# update_sample()
-# Check if first rejected in filter should be accepted after all.
-# Updates sample and count in parent scope (<<-)
-# Returns value NULL. 
-
-#update_sample <- function(cand, accepted, update, count, f, upper_bound) {
-  #flag <- (log(update$w) < log(f(update$cand))/upper_bound(update$cand))
-  #if (is.na(accepted)) {
-    #if (flag){
-      #sample[(count+1)] <<- update$cand
-      #count <<- count + 1
-    #}
-  #}
-  #else {
-    #k <- accepted
-    #if (flag) {
-      #sample[(count+1):(count+k)] <<- cand[1:accepted]
-      #sample[count+k+1] <<- update$cand
-      #count <<- count + k + 1
-    #}
-    #else {
-      #sample[(count+1):(count+k)] <<- cand[1:accepted]
-      #count <<- count + k 
-    #}
-  #}
-  #invisible(NULL)
-#}
-
 update_sample <- function(cand, accepted, update, f, upper_bound) {
   flag <- (log(update$w) < log(f(update$cand))/upper_bound(update$cand))
   if (is.na(accepted)) {
@@ -198,7 +171,8 @@ sample_upper_bound <- function(m, x, hx, hpx, z) {
   intervalcdf <- cumsum(I)
   sample <- runif(m, min=0, max=Inormalize)
   #calculate which interval the sample falls into
-  sample_interval <- sapply(sample, function(t) sum(intervalcdf<t)) + 1
+  #sample_interval <- sapply(sample, function(t) sum(intervalcdf<t)) + 1
+  sample_interval <- rowSums(outer(sample, intervalcdf, function(x,y) x>y)) + 1
   t <- sample - c(0, intervalcdf)[sample_interval]
   
   sample_x <- inversecdf(t, sample_interval, factor1, hpx, z)
@@ -209,6 +183,7 @@ sample_upper_bound <- function(m, x, hx, hpx, z) {
 inversecdf <- function(t, j, factor1, hpx, z) {
   return ( log(t/factor1[j]*hpx[j] + exp(hpx[j]*z[j])) / hpx[j] )
 }
+
 #update_x function adds the update point into the abscissas vector, and also checks if the derivative at the update point is between its neighbors(i.e., checking the concaveness)
 
 update_x <- function(f, x, hx, hpx, update, ...) {

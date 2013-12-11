@@ -8,6 +8,7 @@
 ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init, ...) {
   #Generating the initial abscissaes x
   x <- x_init
+  x <- sort(x)
   hx <- log(f(x, ...))
   hpx <- diag(attributes(numericDeriv(quote(log(f(x, ...))), "x"))$gradient)
   if (((hpx[1] < 0) & (left_bound==-Inf)) | ((hpx[length(hpx)]>0) & (right_bound==Inf))) stop("The derivatie at the first/last initial point must be positive/negative")
