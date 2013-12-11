@@ -1,9 +1,9 @@
 ## STAT 243 Final Project: adaptive rejection sampling ##
-## Jinze Gu, Haavard Kvamme, Reid Stevens and Yang Wang ##
+## Jinze Gu, Havard Kvamme, Reid Stevens and Yang Wang ##
 
 ## This is the primary function that performs the sampling from a log-concave probability density function using the adaptive rejection sampling algorithm developed by Gilks and Wild (Appl. Statist. 41, 337, 1992) ##
 
-#f is the target density function, n is the number of required sample, test indicates whether to perform the test, k is the initial number of abscissas
+#f is the target density function, n is the number of required sample, test indicates whether to perform the test, k is the initial number of abscissaes
 
 ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init, ...) {
   #Generating the initial abscissaes x
@@ -17,7 +17,7 @@ ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init, ...) {
 
   while (count < n) {
     #Make the lower_bound, upper bound functions
-    lower_bound <- make_lower_bound(x, hx)
+    lower_bound <- make_lower_bound(x, hx, left_bound, right_bound)
     upper_bound <- make_upper_bound(x, hx, hpx, z)
     
     #Draw samples from the upper bound function
@@ -25,26 +25,24 @@ ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init, ...) {
     
     #"update" records the first point in the sample that can not be accepted based on lowerbound
     #"accepted" records the candidates drawn from upper_bound function that are accepted by only using the lowerbound until the "update" point
-    cand_filtered <- filter(cand, lower_bound, upper_bound, n-count)
+    cand_filtered <- filter(cand, lower_bound, upper_bound)
     accepted <- cand_filtered$accepted
     update <- cand_filtered$update
     
-    if (is.na(update[1])) {
-      sample[(count+1):n] <- cand
+    if (is.na(update)) {
+      sample[(count+1):n] <- accepted
       return(sample)
     }
     
     #Check the log-concaveness by checking if the log(f(update)) falls in between lower and upper bound function 
-    if ((log(f(update$cand, ...)) < lower_bound(update$cand)) | (log(f(update$cand, ...)) > upper_bound(update$cand))) stop("The sample function is not log-concaved!")
+    if ((log(f(update, ...)) < lower_bound(update)) | (log(f(update, ...)) > upper_bound(update))) stop("The sample function is not log-concaved!")
     
     #Update the sample using cand_filtered
-    index <- update_sample(cand, accepted, update, f, upper_bound)
-    if (index != 0) {
-      sample[(count+1):(count+index)] <- cand[1:index]
-      count <- count + index
-    }
-    #Update the abscissas x
-    update_absci <- update_x(f, x, hx, hpx, update$cand, ...)
+    sample <- update_sample(sample, accepted, update, count, f, upper_bound, ...)
+    count <- length(na.omit(sample))
+    
+    #Update the abscissaes x
+    update_absci <- update_x(f, x, hx, hpx, update, ...)
     x <- update_absci$x
     hx <- update_absci$hx
     hpx <- update_absci$hpx
@@ -52,122 +50,80 @@ ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init, ...) {
   }
   return (sample)
 }
-# -----------------------------------------------------------------------
-# The function filter() used in adaptive_rejection_sampling_main.R
-# It performs a squeezing test between the lower and upper bound, on the candidates in cand.
 
-# Returns a list with
-# $accepted: integer: position of last accepted candidate
-# $update:   list: $cand is fist value not accepted
-# 		   $w is corresponding draw form uniform dist
-#                  Or if all candidates are accepted returns NA
-# If all the cand are accepted, the update value is NA
-# If no cand is accepted, the accepted value is NA
+#Function filer takes in the cand generated from sample_upper_bound and return the accepted sample and update point. 
+#If all the cand are accepted, the update value is NA
+#If no cand is accepted, the accepted value is NA
 
-filter <- function(cand, lower_bound, upper_bound, m){
-  w <- runif(m) 
+filter <- function(cand, lower_bound, upper_bound){
+  w <- runif(n = length(cand)) # Should use value from script
   squeeze <- lower_bound(cand) - upper_bound(cand)
-
-  # Gives NA if all are accepted
+  
+  # Gives NA if the all is accepted
   i <- which(log(w) > squeeze)[1]
-
+  
   if (is.na(i)) {
-    return(list(accepted=m, update=NA))
+    return(list(accepted=cand, update=NA))
   } 
   else{
     if (i==1) {
-      return(list(accepted=NA, update=list(cand=cand[i], w=w[i])))
+      return(list(accepted=NA, update=cand[i]))
     }
     else {
-      return(list(accepted=(i-1), update=list(cand=cand[i], w=w[i])))
+      return(list(accepted=cand[1:(i-1)], update=cand[i]))
     }
   }
 }
 
-#----------------------------------------------------------------------------
-# update_sample()
-# Check if first rejected in filter should be accepted after all.
-# Updates sample and count in parent scope (<<-)
-# Returns value NULL. 
 
-#update_sample <- function(cand, accepted, update, count, f, upper_bound) {
-  #flag <- (log(update$w) < log(f(update$cand))/upper_bound(update$cand))
-  #if (is.na(accepted)) {
-    #if (flag){
-      #sample[(count+1)] <<- update$cand
-      #count <<- count + 1
-    #}
-  #}
-  #else {
-    #k <- accepted
-    #if (flag) {
-      #sample[(count+1):(count+k)] <<- cand[1:accepted]
-      #sample[count+k+1] <<- update$cand
-      #count <<- count + k + 1
-    #}
-    #else {
-      #sample[(count+1):(count+k)] <<- cand[1:accepted]
-      #count <<- count + k 
-    #}
-  #}
-  #invisible(NULL)
-#}
-
-update_sample <- function(cand, accepted, update, f, upper_bound) {
-  flag <- (log(update$w) < log(f(update$cand))/upper_bound(update$cand))
-  if (is.na(accepted)) {
-    if (flag){
-      return(1)
-    }
+#update_sample function adds the accepted sample into the final sample, and it also check whether to add update into the final sample
+update_sample <- function(sample, accepted, update, count, f, upper_bound, ...) {
+  w <- runif(1)
+  flag <- (log(w) < log(f(update, ...))/upper_bound(update))
+  if (is.na(accepted[1])) {
+    if (flag) sample[(count+1)] <- update
   }
   else {
+    k <- length(accepted)
     if (flag) {
-      return(accepted + 1)
+      sample[(count+1):(count+1+k)] <- c(accepted, update)
     }
     else {
-      return(accepted)
+      sample[(count+1):(count+k)] <- c(accepted)
     }
   }
-  return(0)
+  return(sample)
 }
 
-
-# --------------------------------------------------------------
 #make_lower_bound function returns the lower_bound function
 #lower_bound function is set to be -Inf when argument falls outside the abscissaes range.
-
-make_lower_bound <- function(x, hx) {
-  min <- min(x)
-  max <- max(x)
-  left <- min - abs(min*.Machine$double.eps)
-  right <- max + abs(max*.Machine$double.eps)
-  x <- c(left, x, right)
+make_lower_bound <- function(x, hx, left_bound, right_bound) {
+  x <- c(left_bound, x, right_bound)
   hx <- c(-Inf, hx, -Inf)
-  lower_bound <- approxfun(x, hx, rule = c(2,2))
+  lower_bound <- function(xx) {
+    k=length(x)
+    index <- rowSums(outer(xx, x, function(x1,x2) x1>x2))
+    index[index==0] <- 1
+    index[index==k] <- k - 1
+    lx <- ((x[index+1]-xx)*hx[index] + (xx-x[index])*hx[index+1])/(x[index+1]-x[index])
+    lx[index %in% c(1,k-1)] <- -Inf
+    return(lx)
+  }
   return(lower_bound)
 }
 
+#make_upper_bound function returns the upper_bound function
 make_upper_bound <- function(x, hx, hpx, z) {
-  upper_bound_eval_z <- function(z) {
-    index <- rowSums(outer(z, z, function(x1,x2) x1>x2))
+  upper_bound <- function(xx) {
+    index <- rowSums(outer(xx, z, function(x1,x2) x1>x2))
     index[index==0] <- 1
     index[index==length(z)] <- length(z) - 1
-    ux <- hx[index] + (z-x[index])*hpx[index]
+    ux <- hx[index] + (xx-x[index])*hpx[index]
     return (ux)
   }
-  # Because of numerical issues
-  # Need to find a better way to do to this. Is x sorted? 
-  m <- length(z)
-  #if (z[1] == -Inf) z[1] <- -1000*max(abs(x))
-  if (z[1] == -Inf) z[1] <- -1e300
-  #if (z[m] == Inf) z[m] <- 1000*max(abs(x))
-  if (z[m] == Inf) z[m] <- 1e300
-  y <- upper_bound_eval_z(z)
-  upper_bound <- approxfun(z,y)
   return(upper_bound)
 }
 
-#------------------------------------------------
 #Calculating the z based on abscissae x. z[1]=left_bound, z[k+1]=right_bound
 make_z <- function(x, fx, fpx, left_bound, right_bound) {
   k <- length(x)
@@ -188,7 +144,6 @@ make_z <- function(x, fx, fpx, left_bound, right_bound) {
 #sample_upper_bound function samples m points from the upper bound funtion using inverse cdf method. The inverse cdf is calculated analytically and implemented in the auxillary function inversecdf.
 sample_upper_bound <- function(m, x, hx, hpx, z) {
   k <- length(x)
-  
   #Calcualte the normalized integration of upper_bound funtion at each linear interval
   factor1 <- exp(hx - x*hpx) 
   factor2 <- (exp(c(0, hpx) * z)[2:(k+1)] - exp(hpx*z[1:k])) / hpx
@@ -209,7 +164,8 @@ sample_upper_bound <- function(m, x, hx, hpx, z) {
 inversecdf <- function(t, j, factor1, hpx, z) {
   return ( log(t/factor1[j]*hpx[j] + exp(hpx[j]*z[j])) / hpx[j] )
 }
-#update_x function adds the update point into the abscissas vector, and also checks if the derivative at the update point is between its neighbors(i.e., checking the concaveness)
+
+#update_x function adds the update point into the abscissaes vector, and also checks if the derivative at the update point is between its neighbours(i.e., checking the cancaveness)
 
 update_x <- function(f, x, hx, hpx, update, ...) {
   if (is.na(update)){
@@ -234,4 +190,3 @@ update_x <- function(f, x, hx, hpx, update, ...) {
     return(list(x=new_x, hx=new_hx, hpx=new_hpx))
   }
 }
-
