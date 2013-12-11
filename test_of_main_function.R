@@ -33,7 +33,7 @@ ars_sample <- ars(testFun, 1e4, -2, 2, x_init=c(-1,1))
 
 #----------------------------------------------
 # New
-source("ARS.R")
+source("ars.R")
 set.seed(0)
 system.time(ars_sample2 <- ars(dnorm, 1e4, x_init=c(-1,1)))
 par(mfrow = c(2,1))
@@ -62,3 +62,12 @@ hist(ars_sample2)
 #To check if it can catch non-log-concaveness
 testFun <- function(x) exp(x^2)
 ars_sample2 <- ars(testFun, 1e4, -2, 2, x_init=c(-1,1))
+
+
+# --------------------------------------------
+# Profiling
+set.seed(0)
+Rprof("ars.prof")
+ars_sample2 <- ars(dnorm, 1e4, x_init=c(-1,1))
+Rprof(NULL)
+summaryRprof("ars.prof")
