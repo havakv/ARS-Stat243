@@ -8,4 +8,5 @@ cat ./functions/make_z.R >> ars_all.R
 cat ./functions/sample_upper_bound.R >> ars_all.R
 cat ./functions/update_x.R >> ars_all.R
 
-
+cat ars_all.R > ars.R
+cat Test.R >> ars.R
