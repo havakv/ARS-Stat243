@@ -1,4 +1,5 @@
 
+# ----------------------------------------------------------------------------
 #update_x function adds the update point into the abscissas vector, and also checks if the derivative at the update point is between its neighbors(i.e., checking the concaveness)
 
 update_x <- function(f, x, hx, hpx, update, ...) {

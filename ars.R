@@ -6,12 +6,12 @@
 #f is the target density function, n is the number of required sample, test indicates whether to perform the test, k is the initial number of abscissas
 
 ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init, ...) {
-  #Generating the initial abscissaes x
+  #Generating the initial abscissas x
   x <- x_init
   x <- sort(x)
   hx <- log(f(x, ...))
   hpx <- diag(attributes(numericDeriv(quote(log(f(x, ...))), "x"))$gradient)
-  if (((hpx[1] < 0) & (left_bound==-Inf)) | ((hpx[length(hpx)]>0) & (right_bound==Inf))) stop("The derivatie at the first/last initial point must be positive/negative")
+  if (((hpx[1] < 0) & (left_bound==-Inf)) | ((hpx[length(hpx)]>0) & (right_bound==Inf))) stop("The derivative at the first/last initial point must be positive/negative")
   sample <- rep(NA, n)
   count <- 0
   z <- make_z(x, hx, hpx, left_bound, right_bound) 
@@ -53,6 +53,7 @@ ars <- function(f, n, left_bound = -Inf, right_bound = Inf, x_init, ...) {
   }
   return (sample)
 }
+
 # -----------------------------------------------------------------------
 # The function filter() used in adaptive_rejection_sampling_main.R
 # It performs a squeezing test between the lower and upper bound, on the candidates in cand.
@@ -86,6 +87,9 @@ filter <- function(cand, lower_bound, upper_bound, m){
 }
 
 #----------------------------------------------------------------------------
+# update_sample 
+# Tests if the first candidate rejected by filer should be accepted after all
+# Returns the index of the last accepted candidate.
 update_sample <- function(cand, accepted, update, f, upper_bound) {
   flag <- (log(update$w) < log(f(update$cand))/upper_bound(update$cand))
   if (is.na(accepted)) {
@@ -107,7 +111,7 @@ update_sample <- function(cand, accepted, update, f, upper_bound) {
 
 # --------------------------------------------------------------
 #make_lower_bound function returns the lower_bound function
-#lower_bound function is set to be -Inf when argument falls outside the abscissaes range.
+#lower_bound function is set to be -Inf when argument falls outside the abscissas range.
 
 make_lower_bound <- function(x, hx) {
   min <- min(x)
@@ -120,6 +124,7 @@ make_lower_bound <- function(x, hx) {
   return(lower_bound)
 }
 
+# ------------------------------------------------------------------
 make_upper_bound <- function(x, hx, hpx, z) {
   upper_bound_eval_z <- function(z) {
     index <- rowSums(outer(z, z, function(x1,x2) x1>x2))
@@ -131,17 +136,17 @@ make_upper_bound <- function(x, hx, hpx, z) {
   # Because of numerical issues
   # Need to find a better way to do to this. Is x sorted? 
   m <- length(z)
-  #if (z[1] == -Inf) z[1] <- -1000*max(abs(x))
-  if (z[1] == -Inf) z[1] <- -1e300
-  #if (z[m] == Inf) z[m] <- 1000*max(abs(x))
-  if (z[m] == Inf) z[m] <- 1e300
+  if (z[1] == -Inf) z[1] <- -10*max(abs(x))
+  if (z[m] == Inf) z[m] <- 10*max(abs(x))
   y <- upper_bound_eval_z(z)
   upper_bound <- approxfun(z,y)
   return(upper_bound)
 }
 
-#------------------------------------------------
-#Calculating the z based on abscissae x. z[1]=left_bound, z[k+1]=right_bound
+
+# ---------------------------------------------------------------------------
+# Calculating the z based on abscissae x. z[1]=left_bound, z[k+1]=right_bound
+# Returns values for z
 make_z <- function(x, fx, fpx, left_bound, right_bound) {
   k <- length(x)
   xm1 <- c(0, x)
@@ -158,7 +163,9 @@ make_z <- function(x, fx, fpx, left_bound, right_bound) {
   return (z)
 }
 
-#sample_upper_bound function samples m points from the upper bound funtion using inverse cdf method. The inverse cdf is calculated analytically and implemented in the auxillary function inversecdf.
+
+# ----------------------------------------------------------------------------
+# sample_upper_bound function samples m points from the upper bound funtion using inverse cdf method. The inverse cdf is calculated analytically and implemented in the auxillary function inversecdf.
 sample_upper_bound <- function(m, x, hx, hpx, z) {
   k <- length(x)
   
@@ -184,6 +191,7 @@ inversecdf <- function(t, j, factor1, hpx, z) {
   return ( log(t/factor1[j]*hpx[j] + exp(hpx[j]*z[j])) / hpx[j] )
 }
 
+# ----------------------------------------------------------------------------
 #update_x function adds the update point into the abscissas vector, and also checks if the derivative at the update point is between its neighbors(i.e., checking the concaveness)
 
 update_x <- function(f, x, hx, hpx, update, ...) {

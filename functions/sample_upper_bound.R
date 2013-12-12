@@ -1,4 +1,6 @@
-#sample_upper_bound function samples m points from the upper bound funtion using inverse cdf method. The inverse cdf is calculated analytically and implemented in the auxillary function inversecdf.
+
+# ----------------------------------------------------------------------------
+# sample_upper_bound function samples m points from the upper bound funtion using inverse cdf method. The inverse cdf is calculated analytically and implemented in the auxillary function inversecdf.
 sample_upper_bound <- function(m, x, hx, hpx, z) {
   k <- length(x)
   

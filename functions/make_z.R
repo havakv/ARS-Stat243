@@ -1,4 +1,7 @@
-#Calculating the z based on abscissae x. z[1]=left_bound, z[k+1]=right_bound
+
+# ---------------------------------------------------------------------------
+# Calculating the z based on abscissae x. z[1]=left_bound, z[k+1]=right_bound
+# Returns values for z
 make_z <- function(x, fx, fpx, left_bound, right_bound) {
   k <- length(x)
   xm1 <- c(0, x)
