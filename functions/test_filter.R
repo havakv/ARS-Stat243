@@ -2,7 +2,7 @@
 
 # Test functions
 set.seed(0)
-source("../ars.R")
+source("../ars_all.R")
 f <- dnorm
 n <- 10
 x <- sort(rnorm(7))
