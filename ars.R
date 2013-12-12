@@ -90,8 +90,8 @@ filter <- function(cand, lower_bound, upper_bound, m){
 # update_sample 
 # Tests if the first candidate rejected by filer should be accepted after all
 # Returns the index of the last accepted candidate.
-update_sample <- function(cand, accepted, update, f, upper_bound) {
-  flag <- (log(update$w) < log(f(update$cand))/upper_bound(update$cand))
+update_sample <- function(cand, accepted, update, f, upper_bound, ...) {
+  flag <- (log(update$w) < log(f(update$cand, ...))/upper_bound(update$cand))
   if (is.na(accepted)) {
     if (flag){
       return(1)
