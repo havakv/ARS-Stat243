@@ -349,7 +349,7 @@ cat("When accepted point is 'NA' \n")
 accepted <- NA
 update_sample(cand, accepted, update,  f, upper_bound)
 
-cat("In this case, the update_sample_function returns the index of the last accepted point, and it returns 1 if the point satisfies the test "flag" and we accepted no point. It returns 0 if the point does not satisfy "flag" and we accepted no point. According to the test, it works correctly with specific output. \n")
+cat("In this case, the update_sample_function returns the index of the last accepted point, and it returns 1 if the point satisfies the test flag and we accepted no point. It returns 0 if the point does not satisfy flag and we accepted no point. According to the test, it works correctly with specific output. \n")
 
 #############################################################################
 # update_x test
