@@ -1,6 +1,6 @@
 # Testing make_lower_bound and make_upper_bound
 
-source("../ARS.R")
+source("../ars.R")
 
 x <- seq(-10.5, 10.5, by=4)
 hx <- -x^2
@@ -8,14 +8,11 @@ hpx <- -2*x
 z <- make_z(x,hx,hpx,-12.0, 12.0)
 lower <- make_lower_bound(x, hx)
 upper <- make_upper_bound(x, hx, hpx, z)
-lower_old <- make_lower_bound_old(x, hx, -12.0, 12.0)
-upper_old <- make_upper_bound_old(x, hx, hpx, z)
 xx <- seq(-12, 12, by=0.2)
 
 plot(xx, -xx^2, type='l')
 lines(xx, lower(xx), col="red")
 lines(xx, upper(xx), col="blue")
-
 
 x <- seq(-10.5, 10.5, by=4)
 hx <- -x^2
